@@ -1,0 +1,41 @@
+---
+title: "diffPeaks Vignette"
+author: "Jianhong Ou"
+date: "`r doc_date()`"
+package: "`r pkg_ver('diffPeaks')`"
+vignette: >
+  %\VignetteIndexEntry{diffPeaks Vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+output:
+  BiocStyle::html_document
+---
+```{r preloadLibrary, echo=FALSE, results="hide", warning=FALSE}
+suppressPackageStartupMessages({
+    library(diffPeaks)
+  library(DESeq2)
+})
+```
+# Introduction
+
+Find the difference in the coverage of given genomic ranges. 
+The difference including quantity difference and shape difference in peaks.
+
+# How to
+
+```{r}
+library(diffPeaks)
+path <- system.file("extdata", package = "diffPeaks", mustWork = TRUE)
+bamfiles <- dir(path, "bam$")
+peaks <- dir(path, "bed$")
+p <- mergePeaks(file.path(path, peaks))
+colData <- DataFrame(samples=bamfiles, condition=sub(".rep..bam", "", bamfiles))
+cnt <- countTable(p, file.path(path, bamfiles), colData)
+res <- DEpeaks(cnt, design= ~condition)
+res1 <- DBFpeaks(cnt, design= ~condition)
+library(DESeq2)
+plotMA(DESeqResults(mcols(res)))
+plotMA(DESeqResults(mcols(res1)[, 1:5]))
+
+```
+
