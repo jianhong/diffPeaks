@@ -36,7 +36,7 @@ countTable <- function(features, bamfiles, colData,
 	so <- summarizeOverlaps(features, bamfiles, ...)
 	## count for splited features
 	features$feature_oid <- seq_along(features)
-	fw <- ceiling(width(features)/windowSize) + 2
+	fw <- ceiling(width(features)/windowSize) + 2 ## set minimal width == 3*wind
 	## recenter the features
 	f.center <- floor((start(features) + end(features))/2)
 	f.start <- f.center - ceiling(windowSize * fw/2)

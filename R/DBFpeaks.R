@@ -39,7 +39,7 @@ DBFpeaks <- function(counts, ...){
   gr <- rowRanges(counts$tile.feature)
   comparison <- ""
   dds <- DESeqDataSet(counts$tile.feature, ...)
-  dds <- DESeq(dds, betaPrior = FALSE)
+  dds <- DESeq(dds, betaPrior = FALSE, fitType = "local")
   rld <- rlog(dds, blind = FALSE)
   tile.cnt <- assay(rld)
   tile.cnt <- as.data.frame(tile.cnt)
@@ -88,14 +88,19 @@ DBFpeaks <- function(counts, ...){
   gr1$range <- paste(start(gr1), end(gr1), sep="-")
   ranges(gr1) <- ranges(counts$feature)
   gr1$type <- "subRange"
+  ## case 4~
   nNA <- !is.na(dbf.res$dbf.p.value)
   gr1[nNA]$type <- "curveComparison"
   gr1[nNA]$baseMean <- dbf.res[nNA, "baseMean"]
   gr1[nNA]$log2FoldChange <- dbf.res[nNA, "log2FoldChange"]
   gr1[nNA]$stat <- dbf.res[nNA, "dbf.statistic"]
   gr1[nNA]$pvalue <- dbf.res[nNA, "dbf.p.value"]
-  gr1[nNA]$padj <- dbf.res[nNA, "padj"]
-  gr1[nNA]$range <- paste(start(gr1), end(gr1), sep="-")[nNA]
+  gr1[nNA]$padj <- dbf.res[nNA, "padj"] ## adjust p value too high.
+  gr2 <- split(gr, as.character(gr$X))
+  gr2 <- unlist(GRangesList(lapply(gr2, range)))
+  gr2 <- gr2[order(as.numeric(names(gr2)))]
+  stopifnot(identical(as.integer(names(gr2)), seq_along(gr1)))
+  gr1[nNA]$range <- paste(start(gr2), end(gr2), sep="-")[nNA]
   gr1$X <- NULL
   gr1
 }
