@@ -1,3 +1,7 @@
+# CHANGES IN VERSION 0.1.2
+
+* add parameter maxPeakWidth for mergePeaks
+
 # CHANGES IN VERSION 0.1.1
 
 * specify fitType='local' for DBFpeaks

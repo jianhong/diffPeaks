@@ -4,10 +4,13 @@
 \alias{mergePeaks}
 \title{Merge BED files}
 \usage{
-mergePeaks(beds, ...)
+mergePeaks(beds, maxPeakWidth = 5000, ...)
 }
 \arguments{
 \item{beds}{BED filenames}
+
+\item{maxPeakWidth}{maximal peak width. If greater than maxPeakWidth,
+the peak will be divided in half to fit the parameter.}
 
 \item{...}{parameters could be passed to \link[rtracklayer]{import}}
 }

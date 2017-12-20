@@ -35,7 +35,6 @@ res <- DEpeaks(cnt, design= ~condition)
 res1 <- DBFpeaks(cnt, design= ~condition)
 library(DESeq2)
 plotMA(DESeqResults(mcols(res)))
-plotMA(DESeqResults(mcols(res1)[, 1:5]))
-
+plotMA(DESeqResults(mcols(res1)))
 ```
 

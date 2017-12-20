@@ -1,7 +1,7 @@
 Package: diffPeaks
 Type: Package
 Title: Quantifying Differential Features
-Version: 0.1.1
+Version: 0.1.2
 Author: Jianhong Ou
 Maintainer: Jianhong Ou <jianhong.ou@duke.edu>
 Description: Find the difference in the coverage of given genomic ranges. 
