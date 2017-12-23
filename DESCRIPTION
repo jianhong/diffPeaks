@@ -1,15 +1,15 @@
 Package: diffPeaks
 Type: Package
 Title: Quantifying Differential Features
-Version: 0.1.2
+Version: 0.1.3
 Author: Jianhong Ou
 Maintainer: Jianhong Ou <jianhong.ou@duke.edu>
 Description: Find the difference in the coverage of given genomic ranges. 
              The difference including quantity difference and shape difference in peaks.
 Depends: R (>= 3.4), BiocGenerics, S4Vectors, stats
 Imports: IRanges, GenomicRanges, GenomicAlignments, rtracklayer, DESeq2, SummarizedExperiment,
-         ecodist
-Suggests: knitr, BiocStyle
+         ecodist, BSgenome, ChIPpeakAnno, GenomicFeatures, Rsamtools, GenomeInfoDb
+Suggests: knitr, BiocStyle, BSgenome.Hsapiens.UCSC.hg19, TxDb.Hsapiens.UCSC.hg19.knownGene
 License: GPL (>= 2)
 LazyData: TRUE
 VignetteBuilder: knitr
