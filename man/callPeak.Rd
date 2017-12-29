@@ -4,14 +4,18 @@
 \alias{callPeak}
 \title{Call peaks}
 \usage{
-callPeak(bamfile, index = bamfile, txdb, genome, upstream = 50000,
-  downstream = 50000, ideaPeakWidth = 200, FDRfilter = 0.05,
-  direction = c("over", "less"))
+callPeak(bamfile, index = bamfile, inputBam = NULL, inputIndex = inputBam,
+  txdb, genome, upstream = 50000, downstream = 50000, ideaPeakWidth = 200,
+  FDRfilter = 0.05, direction = c("over", "less"))
 }
 \arguments{
 \item{bamfile}{bam file name}
 
 \item{index}{index file name}
+
+\item{inputBam}{input bam file name}
+
+\item{inputIndex}{index file name for input}
 
 \item{txdb}{TxDb object}
 

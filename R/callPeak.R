@@ -2,6 +2,8 @@
 #' @description Calling peaks from bam files
 #' @param bamfile bam file name
 #' @param index index file name
+#' @param inputBam input bam file name
+#' @param inputIndex index file name for input
 #' @param txdb TxDb object
 #' @param genome BSgenome object
 #' @param upstream peak scan start position from upstream of gene
@@ -34,7 +36,8 @@
 #' ideaPeakWidth <- 200
 #' direction <- "over"
 #' x <- callPeak(bamfile, txdb=txdb, genome=genome)
-callPeak <- function(bamfile, index=bamfile,
+callPeak <- function(bamfile, index=bamfile, 
+                     inputBam=NULL, inputIndex=inputBam,
                      txdb, genome, 
                      upstream=50000, downstream=50000,
                      ideaPeakWidth=200, FDRfilter=0.05, 
@@ -44,6 +47,9 @@ callPeak <- function(bamfile, index=bamfile,
   stopifnot(is(upstream, "numeric"))
   stopifnot(is(downstream, "numeric"))
   stopifnot(is(ideaPeakWidth, "numeric"))
+  stopifnot(length(bamfile)==1)
+  stopifnot(length(inputBam)<=length(bamfile))
+  stopifnot(length(bamfile)==length(index))
   upstream <- upstream[1]
   downstream <- downstream[1]
   ideaPeakWidth <- ideaPeakWidth[1]
@@ -64,6 +70,54 @@ callPeak <- function(bamfile, index=bamfile,
   seqinfo <- scanBamHeader(bamfile, index=index)[[1]]$targets
   region <- region[seqnames(region) %in% names(seqinfo)]
   seqlevels(region) <- intersect(seqlevels(region), names(seqinfo))
+  region <- count5end(bamfile, index, region, ideaPeakWidth)
+  if(length(inputBam)>0){
+    inputCnt <- count5end(inputBam, inputIndex, region, ideaPeakWidth)
+    ol <- findOverlaps(region, inputCnt, type = "equal")
+    region[queryHits(ol)]$counts <- 
+      region[queryHits(ol)]$counts - inputCnt[subjectHits(ol)]$counts
+  }
+  region <- region[region$counts>0]
+  if(length(region)==0){
+    return(NULL)
+  }
+  ## Negative Binomial Distribution
+  ## P(X=r) = C(n-1, r-1) p^r (1-p)^(n-r)
+  mu <- mean(region$counts)
+  var <- var(region$counts)
+  p <- 1 - mu / var
+  if(p < 0){
+    p <- 1
+  }
+  r <- region$counts
+  n <- width(region)
+  region$pval <- 
+    pnbinom(r-1, n-1, 
+            prob = p, 
+            lower.tail = FALSE) #choose(n-1, r-1) * p^r * (1-p)^(n-r)
+  region$FDR <- p.adjust(region$pval, method = "BH")
+  region <- region[region$FDR < FDRfilter]
+  region.rd <- reduce(region, min.gapwidth = ideaPeakWidth, with.revmap=TRUE)
+  region.revmap <- region[unlist(region.rd$revmap)]
+  region.revmap$newID <- rep(seq_along(region.rd), lengths(region.rd$revmap))
+  mc <- as.data.frame(mcols(region.revmap))
+  fa <- formatC(mc$newID, width = nchar(max(mc$newID)), flag = "0")
+  region.rd$counts <- as.numeric(rowsum(mc$counts, fa))
+  region.rd$pvalue <- sapply(split(mc$pval, fa), min)
+  region.rd$FDR <- sapply(split(mc$FDR, fa), min)
+  region.rd$revmap <- NULL
+  region.rd[ifelse(direction=="over", region.rd$counts>mu, region.rd$counts<mu)]
+}
+
+
+#' count reads by regions
+#' @description help function for callPeak
+#' @param bamfile bam file name
+#' @param index index file name
+#' @param region an object of GRanges for counting.
+#' @param ideaPeakWidth ideally peak width, eg, ATAC-seq: 200bp
+#' @return an object of GRanges with counting
+count5end <- function(bamfile, index, region, ideaPeakWidth){
   ## check SE or PE, if SE, estimate the fragment size and shift the reads
   pe <- testPairedEndBam(bamfile, index)
   if(!pe){
@@ -101,41 +155,14 @@ callPeak <- function(bamfile, index=bamfile,
   cvg <- cvg[sapply(cvg, sum)>0]
   ## stplit gerions to ideaPeakWidth
   region <- region[seqnames(region) %in% names(cvg)]
-  region <- tile(region, width = ideaPeakWidth)
-  region <- unlist(region)
+  if(any(width(region)>ideaPeakWidth)){
+    region <- tile(region, width = ideaPeakWidth)
+    region <- unlist(region)
+  }
   region <- split(region, seqnames(region))
   region <- region[names(cvg)]
   counts <- viewSums(Views(cvg, region))
   region <- unlist(region, use.names = FALSE)
   region$counts <- unlist(counts, use.names = FALSE)
-  region <- region[region$counts>0]
-  if(length(region)==0){
-    return(NULL)
-  }
-  ## Negative Binomial Distribution
-  ## P(X=r) = C(n-1, r-1) p^r (1-p)^(n-r)
-  mu <- mean(region$counts)
-  var <- var(region$counts)
-  p <- 1 - mu / var
-  if(p < 0){
-    p <- 1
-  }
-  r <- region$counts
-  n <- width(region)
-  region$pval <- 
-    pnbinom(r-1, n-1, 
-            prob = p, 
-            lower.tail = FALSE) #choose(n-1, r-1) * p^r * (1-p)^(n-r)
-  region$FDR <- p.adjust(region$pval, method = "BH")
-  region <- region[region$FDR < FDRfilter]
-  region.rd <- reduce(region, min.gapwidth = ideaPeakWidth, with.revmap=TRUE)
-  region.revmap <- region[unlist(region.rd$revmap)]
-  region.revmap$newID <- rep(seq_along(region.rd), lengths(region.rd$revmap))
-  mc <- as.data.frame(mcols(region.revmap))
-  fa <- formatC(mc$newID, width = nchar(max(mc$newID)), flag = "0")
-  region.rd$counts <- as.numeric(rowsum(mc$counts, fa))
-  region.rd$pvalue <- sapply(split(mc$pval, fa), min)
-  region.rd$FDR <- sapply(split(mc$FDR, fa), min)
-  region.rd$revmap <- NULL
-  region.rd[ifelse(direction=="over", region.rd$counts>mu, region.rd$counts<mu)]
+  region
 }
