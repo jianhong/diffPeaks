@@ -1,6 +1,7 @@
 #' @title Merge BED files
 #' @description Merge multiple peak files
-#' @param beds BED filenames
+#' @param peaks BED filenames which indicate the peaks or an GRangesList 
+#' or GRanges object could be used as input peaks.
 #' @param maxPeakWidth maximal peak width. If greater than maxPeakWidth,
 #'        the peak will be divided in half to fit the parameter.
 #' @param ... parameters could be passed to \link[rtracklayer]{import}
@@ -14,14 +15,19 @@
 #' peaks <- dir(path, "bed$")
 #' p <- mergePeaks(file.path(path, peaks))
 
-mergePeaks <- function(beds, maxPeakWidth=5000, ...){
-  stopifnot(length(beds)>1)
-	d <- lapply(beds, function(.ele) import(.ele, ...))
-	d <- sort(reduce(unlist(GRangesList(d))))
+mergePeaks <- function(peaks, maxPeakWidth=5000, ...){
+  if(inherits(peaks, c("GRanges", "GRangesList"))){
+    d <- sort(reduce(unlist(peaks)))
+  }else{
+    stopifnot(length(peaks)>1)
+    d <- lapply(peaks, function(.ele) import(.ele, ...))
+    d <- sort(reduce(unlist(GRangesList(d))))
+  }
 	w <- width(d)
 	if(any(w>maxPeakWidth)){
 	  bins <- ceiling(w/maxPeakWidth)
 	  d <- tile(d, n=bins)
+	  d <- unlist(d)
 	}
 	d
 }

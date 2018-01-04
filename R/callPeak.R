@@ -119,7 +119,7 @@ callPeak <- function(bamfile, index=bamfile,
 #' @return an object of GRanges with counting
 count5end <- function(bamfile, index, region, ideaPeakWidth){
   ## check SE or PE, if SE, estimate the fragment size and shift the reads
-  pe <- testPairedEndBam(bamfile, index)
+  suppressMessages(pe <- testPairedEndBam(bamfile, index))
   if(!pe){
     ## estimate the fragment size
     fragmentSize <- estFragmentLength(bamfile, index, plot = FALSE)
@@ -138,6 +138,7 @@ count5end <- function(bamfile, index, region, ideaPeakWidth){
     gal[["+"]] <- shift(gal[["+"]], shift = halfD)
     gal[["-"]] <- shift(gal[["-"]], shift = -halfD)
     gal <- unlist(gal)
+    gal <- trim(gal)
   }else{
     gal <- readGAlignmentPairs(bamfile, index = index,  
                                param=ScanBamParam(scanBamFlag(isProperPair = TRUE, 

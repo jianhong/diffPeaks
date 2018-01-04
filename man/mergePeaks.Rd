@@ -4,10 +4,11 @@
 \alias{mergePeaks}
 \title{Merge BED files}
 \usage{
-mergePeaks(beds, maxPeakWidth = 5000, ...)
+mergePeaks(peaks, maxPeakWidth = 5000, ...)
 }
 \arguments{
-\item{beds}{BED filenames}
+\item{peaks}{BED filenames which indicate the peaks or an GRangesList 
+or GRanges object could be used as input peaks.}
 
 \item{maxPeakWidth}{maximal peak width. If greater than maxPeakWidth,
 the peak will be divided in half to fit the parameter.}
