@@ -16,7 +16,10 @@
 #' p <- mergePeaks(file.path(path, peaks))
 
 mergePeaks <- function(peaks, maxPeakWidth=5000, ...){
-  if(inherits(peaks, c("GRanges", "GRangesList"))){
+  if(inherits(peaks, c("GRanges", "GRangesList", "list"))){
+    if(is(peaks, "list")){
+      peaks <- GRangesList(peaks)
+    }
     d <- sort(reduce(unlist(peaks)))
   }else{
     stopifnot(length(peaks)>1)

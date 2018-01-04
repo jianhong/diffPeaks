@@ -9,7 +9,8 @@ Description: Find the difference in the coverage of given genomic ranges.
 Depends: R (>= 3.4), BiocGenerics, S4Vectors, stats
 Imports: IRanges, GenomicRanges, GenomicAlignments, rtracklayer, DESeq2, SummarizedExperiment,
          ecodist, BSgenome, ChIPpeakAnno, GenomicFeatures, Rsamtools, GenomeInfoDb
-Suggests: knitr, BiocStyle, BSgenome.Hsapiens.UCSC.hg19, TxDb.Hsapiens.UCSC.hg19.knownGene
+Suggests: knitr, BiocStyle, BSgenome.Drerio.UCSC.danRer10, TxDb.Drerio.UCSC.danRer10.refGene, 
+          trackViewer, org.Dr.eg.db, ChIPpeakAnno
 License: GPL (>= 2)
 LazyData: TRUE
 VignetteBuilder: knitr

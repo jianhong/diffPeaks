@@ -12,8 +12,12 @@ output:
 ---
 ```{r preloadLibrary, echo=FALSE, results="hide", warning=FALSE}
 suppressPackageStartupMessages({
-    library(diffPeaks)
+  library(diffPeaks)
+  library(TxDb.Drerio.UCSC.danRer10.refGene)
+  library(org.Dr.eg.db)
+  library(BSgenome.Drerio.UCSC.danRer10)
   library(DESeq2)
+  library(trackViewer)
 })
 ```
 # Introduction
@@ -23,12 +27,20 @@ The difference including quantity difference and shape difference in peaks.
 
 # How to
 
-```{r}
+```{r warning=FALSE}
 library(diffPeaks)
+library(TxDb.Drerio.UCSC.danRer10.refGene)
+library(BSgenome.Drerio.UCSC.danRer10)
 path <- system.file("extdata", package = "diffPeaks", mustWork = TRUE)
 bamfiles <- dir(path, "bam$")
-peaks <- dir(path, "bed$")
-p <- mergePeaks(file.path(path, peaks))
+peaks <- list()
+for(i in seq_along(bamfiles)){
+  peaks[[sub(".bam", "", bamfiles[i])]] <-
+    callPeak(file.path(path, bamfiles[i]), 
+             txdb = TxDb.Drerio.UCSC.danRer10.refGene, 
+             genome = Drerio)
+}
+p <- mergePeaks(peaks)
 colData <- DataFrame(samples=bamfiles, condition=sub(".rep..bam", "", bamfiles))
 cnt <- countTable(p, file.path(path, bamfiles), colData)
 res <- DEpeaks(cnt, design= ~condition)
@@ -36,5 +48,24 @@ res1 <- DBFpeaks(cnt, design= ~condition)
 library(DESeq2)
 plotMA(DESeqResults(mcols(res)))
 plotMA(DESeqResults(mcols(res1)))
+library(ChIPpeakAnno)
+library(org.Dr.eg.db)
+anno <- toGRanges(TxDb.Drerio.UCSC.danRer10.refGene)
+res.anno <- annotatePeakInBatch(res, AnnotationData = anno)
+res1.anno <- annotatePeakInBatch(res1, AnnotationData = anno)
+res.anno$symbol[!is.na(res.anno$feature)] <- 
+  xget(res.anno$feature[!is.na(res.anno$feature)], org.Dr.egSYMBOL, output = "first")
+res1.anno$symbol[!is.na(res1.anno$feature)] <- 
+  xget(res1.anno$feature[!is.na(res1.anno$feature)], org.Dr.egSYMBOL, output = "first")
+res.anno.s <- res.anno[res.anno$pvalue<0.005]
+res1.anno.s <- res1.anno[res.anno$pvalue<0.005]
+library(trackViewer)
+optSty <- viewGene(res.anno.s[1]$symbol, filenames = file.path(path, bamfiles), format = "BAM",
+         txdb = TxDb.Drerio.UCSC.danRer10.refGene, org = "org.Dr.eg.db",
+         upstream = abs(res.anno.s[1]$distancetoFeature) + width(res.anno.s[1]) + 2000,
+         downstream = abs(res.anno.s[1]$distancetoFeature) + width(res.anno.s[1]) + 2000,
+         plot=TRUE, anchor="TSS")
+vp <- getCurTrackViewport(optSty$style, start(optSty$range), end(optSty$range))
+addGuideLine(c(start(res.anno.s), end(res.anno.s)), col = "red", lty = 2, vp=vp)
 ```
 

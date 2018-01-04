@@ -28,10 +28,10 @@
 #' bamfiles <- dir(path, "bam$", full.names = TRUE)
 #' bamfile <- bamfiles[1]
 #' index <- bamfile
-#' library(TxDb.Hsapiens.UCSC.hg19.knownGene)
-#' txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-#' library(BSgenome.Hsapiens.UCSC.hg19)
-#' genome <- Hsapiens
+#' library(TxDb.Drerio.UCSC.danRer10.refGene)
+#' txdb <- TxDb.Drerio.UCSC.danRer10.refGene
+#' library(BSgenome.Drerio.UCSC.danRer10)
+#' genome <- Drerio
 #' upstream <- downstream <- 50000L
 #' ideaPeakWidth <- 200
 #' direction <- "over"
