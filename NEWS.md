@@ -1,3 +1,7 @@
+# CHANGES IN VERSION 0.1.4
+
+* add FTpeaks and CMHpeaks function
+
 # CHANGES IN VERSION 0.1.3
 
 * add callPeak function

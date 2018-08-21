@@ -16,15 +16,7 @@
 #' DEpeaks(cnt, design= ~condition)
 
 DEpeaks <- function(counts, ...){
-  if(length(counts$signature)!=1){
-    stop("counts must be output of countTable!")
-  }
-  if(counts$signature!="countTable"){
-    stop("counts must be output of countTable!")
-  }
-  if(any(names(counts)!=c("feature", "tile.feature", "signature"))){
-    stop("counts must be output of countTable!")
-  }
+  isCountTable(counts)
   dds <- DESeqDataSet(counts$feature, ...)
   dds <- DESeq(dds, betaPrior = FALSE)
   if(length(resultsNames(dds))==2 && resultsNames(dds)[1]=="Intercept"){

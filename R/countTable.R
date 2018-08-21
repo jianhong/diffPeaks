@@ -6,6 +6,8 @@
 #' @param windowSize the size of windows for counts
 #' @param colData a DataFrame or data.frame with at least a single column. 
 #' Rows of colData correspond to bamfiles
+#' @param mode mode of counts. See \link[GenomicAlignments]{summarizeOverlaps} for details. 
+#' Default is \link{IntersectionNotStrict}.
 #' @param ... parameters could be passed to \link[GenomicAlignments]{summarizeOverlaps}
 #' @return a list of \link[SummarizedExperiment]{RangedSummarizedExperiment}
 #' @import SummarizedExperiment
@@ -24,7 +26,9 @@
 
 countTable <- function(features, bamfiles, colData,
                        samples=bamfiles, 
-                       windowSize=200L, ...){
+                       windowSize=200L, 
+                       mode=IntersectionNotStrict,
+                       ...){
   stopifnot(inherits(features, "GRanges"))
   stopifnot(is.character(samples))
   if(missing(colData)){
@@ -33,7 +37,14 @@ countTable <- function(features, bamfiles, colData,
   stopifnot(nrow(colData)==length(bamfiles))
   stopifnot(inherits(colData, "DataFrame"))
   ## count for DESeq2
-	so <- summarizeOverlaps(features, bamfiles, ...)
+	so <- summarizeOverlaps(features, bamfiles, mode=mode, ...)
+	## count for splitted two features.
+	## split each feature into two parts, in next step, will test it using fisher's exact test.
+	features2 <- features
+	features2 <- tile(features2, n = 2)
+	features2 <- unlist(features2)
+	features2$feature_oid <- rep(seq_along(features), each=2)
+	so2 <- summarizeOverlaps(features2, bamfiles, mode = mode, ...)
 	## count for splited features
 	features$feature_oid <- seq_along(features)
 	fw <- ceiling(width(features)/windowSize) + 2 ## set minimal width == 3*wind
@@ -47,8 +58,25 @@ countTable <- function(features, bamfiles, colData,
 	features.tile.l <- lengths(features.tile)
 	features.tile <- unlist(features.tile)
 	mcols(features.tile) <- mcols(features)[rep(seq_along(features), features.tile.l), ]
-	so2 <- summarizeOverlaps(features.tile, bamfiles, ...)
-	colData(so) <- colData(so2) <- colData
-	list(feature=so, tile.feature=so2, signature="countTable")
+	so3 <- summarizeOverlaps(features.tile, bamfiles, mode=mode, ...)
+	colData(so) <- colData(so2) <- colData(so3) <- colData
+	list(feature=so, two.feature=so2, tile.feature=so3, signature="countTable")
 }
 
+#' is output of countTable
+#' @description check an object is output of \link{countTable} or not.
+#' @param counts the object to be checked
+#' @param error the error message
+#' 
+isCountTable <- function(counts, error="counts must be output of countTable!"){
+  if(length(counts$signature)!=1){
+    stop(error)
+  }
+  if(counts$signature!="countTable"){
+    stop(error)
+  }
+  if(any(names(counts)!=c("feature", "two.feature", "tile.feature", "signature"))){
+    stop(error)
+  }
+  invisible(return(TRUE))
+}

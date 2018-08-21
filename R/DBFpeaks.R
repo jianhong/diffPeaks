@@ -21,15 +21,7 @@
 #' DBFpeaks(cnt, design= ~condition)
 #' 
 DBFpeaks <- function(counts, ...){
-  if(length(counts$signature)!=1){
-    stop("counts must be output of countTable!")
-  }
-  if(counts$signature!="countTable"){
-    stop("counts must be output of countTable!")
-  }
-  if(any(names(counts)!=c("feature", "tile.feature", "signature"))){
-    stop("counts must be output of countTable!")
-  }
+  isCountTable(counts)
   
   ## check the length of each peak, 
   ## case 2: use the DESeq2 results, combine two results

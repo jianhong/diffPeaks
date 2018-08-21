@@ -27,7 +27,7 @@ The difference including quantity difference and shape difference in peaks.
 
 # How to
 
-```{r warning=FALSE}
+```{r warning=FALSE,eval=TRUE}
 library(diffPeaks)
 library(TxDb.Drerio.UCSC.danRer10.refGene)
 library(BSgenome.Drerio.UCSC.danRer10)
@@ -41,10 +41,16 @@ for(i in seq_along(bamfiles)){
              genome = Drerio)
 }
 p <- mergePeaks(peaks)
-colData <- DataFrame(samples=bamfiles, condition=sub(".rep..bam", "", bamfiles))
+colData <- DataFrame(samples=bamfiles, 
+                     condition=sub(".rep..bam", "", bamfiles), 
+                     pairs=rep(seq.int(3), 2))
 cnt <- countTable(p, file.path(path, bamfiles), colData)
 res <- DEpeaks(cnt, design= ~condition)
 res1 <- DBFpeaks(cnt, design= ~condition)
+res2 <- FTpeaks(cnt, conditionA="inj", conditionB="uni")
+res2 <- res2[order(res2$pvalue)]
+res3 <- CMHpeaks(cnt, conditionA="inj", conditionB="uni")
+res3 <- res3[order(res3$pvalue)]
 library(DESeq2)
 plotMA(DESeqResults(mcols(res)))
 plotMA(DESeqResults(mcols(res1)))
@@ -53,12 +59,21 @@ library(org.Dr.eg.db)
 anno <- toGRanges(TxDb.Drerio.UCSC.danRer10.refGene)
 res.anno <- annotatePeakInBatch(res, AnnotationData = anno)
 res1.anno <- annotatePeakInBatch(res1, AnnotationData = anno)
+res2.anno <- annotatePeakInBatch(res2, AnnotationData = anno)
+res3.anno <- annotatePeakInBatch(res3, AnnotationData = anno)
 res.anno$symbol[!is.na(res.anno$feature)] <- 
   xget(res.anno$feature[!is.na(res.anno$feature)], org.Dr.egSYMBOL, output = "first")
 res1.anno$symbol[!is.na(res1.anno$feature)] <- 
   xget(res1.anno$feature[!is.na(res1.anno$feature)], org.Dr.egSYMBOL, output = "first")
-res.anno.s <- res.anno[res.anno$pvalue<0.005]
-res1.anno.s <- res1.anno[res.anno$pvalue<0.005]
+res2.anno$symbol[!is.na(res2.anno$feature)] <- 
+  xget(res2.anno$feature[!is.na(res2.anno$feature)], org.Dr.egSYMBOL, output = "first")
+res3.anno$symbol[!is.na(res3.anno$feature)] <- 
+  xget(res3.anno$feature[!is.na(res3.anno$feature)], org.Dr.egSYMBOL, output = "first")
+res.anno.s <- res.anno[!is.na(res.anno$pvalue)]
+res.anno.s <- res.anno.s[res.anno.s$pvalue<0.005]
+res1.anno.s <- res1.anno[res1.anno$pvalue<0.005]
+res2.anno.s <- res2.anno[res2.anno$pvalue<0.005]
+res3.anno.s <- res3.anno[res3.anno$pvalue<0.05]
 library(trackViewer)
 optSty <- viewGene(res.anno.s[1]$symbol, filenames = file.path(path, bamfiles), format = "BAM",
          txdb = TxDb.Drerio.UCSC.danRer10.refGene, org = "org.Dr.eg.db",
@@ -67,5 +82,23 @@ optSty <- viewGene(res.anno.s[1]$symbol, filenames = file.path(path, bamfiles), 
          plot=TRUE, anchor="TSS")
 vp <- getCurTrackViewport(optSty$style, start(optSty$range), end(optSty$range))
 addGuideLine(c(start(res.anno.s), end(res.anno.s)), col = "red", lty = 2, vp=vp)
+
+optSty <- viewGene(res2.anno.s[1]$symbol, filenames = file.path(path, bamfiles), format = "BAM",
+         txdb = TxDb.Drerio.UCSC.danRer10.refGene, org = "org.Dr.eg.db",
+         upstream = abs(res2.anno.s[1]$distancetoFeature) + width(res2.anno.s[1]) + 2000,
+         downstream = 2000,
+         plot=TRUE, anchor="TSS")
+vp <- getCurTrackViewport(optSty$style, start(optSty$range), end(optSty$range))
+addGuideLine(c(start(res2.anno.s[1]), end(res2.anno.s[1])), col = "red", lty = 2, vp=vp)
+addGuideLine((start(res2.anno.s[1]) + end(res2.anno.s[1]))/2, col = "green", lty = 3, vp=vp)
+
+optSty <- viewGene(res3.anno.s[1]$symbol, filenames = file.path(path, bamfiles), format = "BAM",
+         txdb = TxDb.Drerio.UCSC.danRer10.refGene, org = "org.Dr.eg.db",
+         upstream = 2000,
+         downstream = abs(res3.anno.s[1]$distancetoFeature) + width(res3.anno.s[1]) + 2000,
+         plot=TRUE, anchor="TSS")
+vp <- getCurTrackViewport(optSty$style, start(optSty$range), end(optSty$range))
+addGuideLine(c(start(res3.anno.s[1]), end(res3.anno.s[1])), col = "red", lty = 2, vp=vp)
+addGuideLine((start(res3.anno.s[1]) + end(res3.anno.s[1]))/2, col = "green", lty = 3, vp=vp)
 ```
 

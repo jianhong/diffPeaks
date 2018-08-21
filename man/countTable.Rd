@@ -5,7 +5,7 @@
 \title{Counting reads in features}
 \usage{
 countTable(features, bamfiles, colData, samples = bamfiles,
-  windowSize = 200L, ...)
+  windowSize = 200L, mode = IntersectionNotStrict, ...)
 }
 \arguments{
 \item{features}{an object of \link[GenomicRanges]{GRanges}}
@@ -18,6 +18,9 @@ Rows of colData correspond to bamfiles}
 \item{samples}{names of samples, could be same length with bamfiles}
 
 \item{windowSize}{the size of windows for counts}
+
+\item{mode}{mode of counts. See \link[GenomicAlignments]{summarizeOverlaps} for details. 
+Default is \link{IntersectionNotStrict}.}
 
 \item{...}{parameters could be passed to \link[GenomicAlignments]{summarizeOverlaps}}
 }
